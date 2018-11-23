@@ -1,0 +1,15 @@
+name: iEncourager
+version: 1.0-SNAPSHOT
+author: Obed Vazquez
+main: org.whitedev.spigot.plugins.iencourager.IEncouragerPlugin
+commands:
+  scheduleIE:
+    description: starts the cicle of the command specified in the config file.
+    aliases: [iniciarIE]
+    usage: /scheduleIE
+    #permission: <plugin name>.basic
+    #permission-message: You don't have <permission>
+  stopIE:
+    description: stops the cicle of the command specified in the config file.
+    aliases: [detenerIE]
+    usage: /stopIE
