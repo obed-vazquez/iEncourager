@@ -1,5 +1,5 @@
 /* 
- * Filename: IEncouragerException.java
+ * Filename: IEncouragerConfigFile.java
  *  Creation Date:  Nov 21, 2018
  *  Purpose:        [short description]
  * https://creativecommons.org/licenses/by/4.0/legalcode
@@ -93,17 +93,56 @@ Nothing in this Public License constitutes or may be interpreted as a limitation
  *
  */
 
-package org.whitedev.spigot.plugins.iencourager.exceptions;
+package org.white_sdev.spigot_plugins.iencourager;
+
+import java.util.HashMap;
+import java.util.Map;
+import org.white_sdev.spigot_plugins.iencourager.util.ConfigFile;
 
 /**
  * 
  * @author Obed Vazquez
  * @since Nov 21, 2018
  */
-public class IEncouragerException extends RuntimeException{
-
-    public IEncouragerException(String string, Exception e) {
-	super(string,e);
-    }
+public class IEncouragerConfigFile extends ConfigFile{
     
+    //<editor-fold defaultstate="collapsed" desc="SINGLETON">
+    private IEncouragerConfigFile() {}
+    private static class IEncouragerConfigFileHolder {
+	private static final IEncouragerConfigFile INSTANCE = new IEncouragerConfigFile();
+    }
+    public static IEncouragerConfigFile getInstance() {
+	return IEncouragerConfigFileHolder.INSTANCE;
+    }
+    //</editor-fold>
+    
+    @Override
+    public Map<String,String> getConfig(){
+	HashMap<String,String> parameters=new HashMap<>();
+	parameters.put("exhaustionModifierStartDistance", "40000");
+	parameters.put("exhaustionModifierEndDistance", "100000");
+	parameters.put("maxModifier", ".5");
+	parameters.put("oneMinuteRemainingMessage", "The race to the spawn will start in 1 minute");
+	parameters.put("unMinutoRestante", "La carrera al spawn iniciara en 1 minuto");
+	parameters.put("tenSecsRemainingMessage", "The event has started! "
+		+ "The closer to the spawn you get, the better!  RUUUN!");
+	parameters.put("diezSegundosRestantes", "El evento ha iniciado! Entre más cerca del Spawn mejor! CORRE!!");
+	parameters.put("worldName", "world");
+	parameters.put("serverCommandToGiveMoney", "mh money give ");
+	parameters.put("winEventDistance", "1000");
+	parameters.put("outOfEventDistance", "60000");
+	parameters.put("weekEventMinRewards", "4000");
+	parameters.put("weekEventMaxRewards", "12000");
+	parameters.put("dailyEventMinRewards", "1000");
+	parameters.put("dailyEventMaxRewards", "5000");
+	parameters.put("hourEventMinRewards", "500");
+	parameters.put("hourEventMaxRewards", "1500");
+	return parameters;
+    }
+
+    @Override
+    public String getPLUGIN_FOLDER_NAME() {
+	return "iEncourager";
+    }
+
 }

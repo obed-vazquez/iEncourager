@@ -1,6 +1,6 @@
 /* 
- * Filename: IEncouragerConfigFile.java
- *  Creation Date:  Nov 21, 2018
+ * Filename: ConfigFile.java
+ *  Creation Date:  Nov 20, 2018
  *  Purpose:        [short description]
  * https://creativecommons.org/licenses/by/4.0/legalcode
 
@@ -93,53 +93,92 @@ Nothing in this Public License constitutes or may be interpreted as a limitation
  *
  */
 
-package org.whitedev.spigot.plugins.iencourager;
+package org.white_sdev.spigot_plugins.iencourager.util;
 
-import java.util.HashMap;
+import org.white_sdev.spigot_plugins.iencourager.exceptions.IEncouragerException;
+import java.io.File;
+import java.io.IOException;
 import java.util.Map;
-import org.whitedev.spigot.plugins.iencourager.util.ConfigFile;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  * 
  * @author Obed Vazquez
- * @since Nov 21, 2018
+ * @since Nov 20, 2018
  */
-public class IEncouragerConfigFile extends ConfigFile{
+public abstract class ConfigFile {
+
+    /**
+     * @return the PLUGIN_FOLDER_NAME Usually the name of the Plug-in (In your parent case: iEncourager)
+     */
+    public abstract String getPLUGIN_FOLDER_NAME();
     
-    //<editor-fold defaultstate="collapsed" desc="SINGLETON">
-    private IEncouragerConfigFile() {}
-    private static class IEncouragerConfigFileHolder {
-	private static final IEncouragerConfigFile INSTANCE = new IEncouragerConfigFile();
-    }
-    public static IEncouragerConfigFile getInstance() {
-	return IEncouragerConfigFileHolder.INSTANCE;
-    }
-    //</editor-fold>
+    public static JavaPlugin plugin;
+    public static File iEnforcerFile;
+    public static FileConfiguration iEnforcerFileConfig;
     
-    @Override
-    public Map<String,String> getConfig(){
-	HashMap<String,String> parameters=new HashMap<>();
-	parameters.put("worldName", "world");
-	parameters.put("serverCommandToGiveMoney", "mh money give ");
-	parameters.put("exhaustionLimit", "20000");
-	parameters.put("maxModifier", "3");
-	parameters.put("oneMinuteRemainingMessage", "The race to the spawn will start in 1 minute");
-	parameters.put("tenSecsRemainingMessage", "The event has started! "
-		+ "The closer to the spawn you get, the better!  RUUUN!");
-	parameters.put("winEventDistance", "1000");
-	parameters.put("outOfEventDistance", "60000");
-	parameters.put("weekEventMinRewards", "4000");
-	parameters.put("weekEventMaxRewards", "12000");
-	parameters.put("dailyEventMinRewards", "1000");
-	parameters.put("dailyEventMaxRewards", "5000");
-	parameters.put("hourEventMinRewards", "500");
-	parameters.put("hourEventMaxRewards", "1500");
-	return parameters;
+    public static FileConfiguration getFileConfig() {
+        return iEnforcerFileConfig;
     }
 
-    @Override
-    public String getPLUGIN_FOLDER_NAME() {
-	return "iEncourager";
-    }
+    public void loadOrCreateConfigFile(JavaPlugin plugin) {
+	this.plugin=plugin;
+	iEnforcerFile = new File(getPATH(), getCONFIG_FILE_NAME());
+	iEnforcerFileConfig = new YamlConfiguration();
+	try {
 
+	    if (!iEnforcerFile.exists()) {
+		iEnforcerFile.getParentFile().mkdirs();
+		loadDefaultParameters();
+		iEnforcerFileConfig.options().copyDefaults(true);
+		iEnforcerFileConfig.save(iEnforcerFile);
+	    }
+	    iEnforcerFileConfig.load(iEnforcerFile);
+
+	} catch (IOException | InvalidConfigurationException e) {
+	    throw new IEncouragerException("Impossible to create the configuration "
+		    + "File due to an I/O problem",e);
+	}
+    }
+    
+    public void loadDefaultParameters(){
+	getConfig().entrySet().forEach((entry) -> {
+	    iEnforcerFileConfig.addDefault(entry.getKey(), entry.getValue());
+	});
+
+	
+    }
+    
+    /**
+     * Obtains all the initial parameters as a basic key:value set.
+     * @return the parameters
+     */
+    public abstract Map<String,String> getConfig();
+    
+    public static void setConfigValue(String key,String value){
+	iEnforcerFileConfig.set(key, value);
+    }
+    
+    public static String getConfigValue(String key){
+	return iEnforcerFileConfig.get(key)+"";
+    }
+    
+    /**
+     * To be Override. Usually gets config.yml but is open for personalization.
+     * @return the CONFIG_FILE_NAME the name of the file where the parameters will be stored
+     */
+    public String getCONFIG_FILE_NAME(){
+	return "config.yml";
+    }
+    
+    /**
+     * calls <code>setPATH()</code> and returns it
+     * @return the PATH previously given path to the plug-in path configuration files.
+     */
+    public String getPATH() {
+	return "plugins" + File.separator + getPLUGIN_FOLDER_NAME() + File.separator;
+    }
 }

@@ -1,7 +1,7 @@
 name: iEncourager
 version: 1.0-SNAPSHOT
 author: Obed Vazquez
-main: org.whitedev.spigot.plugins.iencourager.IEncouragerPlugin
+main: org.white_sdev.spigot_plugins.iencourager.IEncouragerPlugin
 commands:
   scheduleIE:
     description: starts the cicle of the command specified in the config file.

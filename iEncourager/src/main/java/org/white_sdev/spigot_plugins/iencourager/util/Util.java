@@ -1,7 +1,7 @@
 /* 
- * Filename: ConfigFile.java
+ * Filename: Util.java
  *  Creation Date:  Nov 20, 2018
- *  Purpose:        [short description]
+ *  Purpose:       
  * https://creativecommons.org/licenses/by/4.0/legalcode
 
 Creative Commons Attribution 4.0 International Public License
@@ -93,94 +93,53 @@ Nothing in this Public License constitutes or may be interpreted as a limitation
  *
  */
 
-package org.whitedev.spigot.plugins.iencourager.util;
+package org.white_sdev.spigot_plugins.iencourager.util;
 
-import org.whitedev.spigot.plugins.iencourager.exceptions.IEncouragerException;
-import java.io.File;
-import java.io.IOException;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.white_sdev.spigot_plugins.iencourager.IEncouragerConfigFile;
 
 /**
- * 
+ * Utilities
  * @author Obed Vazquez
  * @since Nov 20, 2018
+ * @version Nov 24, 2018
  */
-public abstract class ConfigFile {
-
+public abstract class Util {
+    
+    
+    
     /**
-     * @return the PLUGIN_FOLDER_NAME Usually the name of the Plug-in (In your parent case: iEncourager)
+     * 
+     * @author Obed Vazquez
+     * @return Returns the <code>Location</code> of the World Spawn
+     * @since Nov 20, 2018
      */
-    public abstract String getPLUGIN_FOLDER_NAME();
-    
-    public static JavaPlugin plugin;
-    public static File iEnforcerFile;
-    public static FileConfiguration iEnforcerFileConfig;
-    
-    public static FileConfiguration getFileConfig() {
-        return iEnforcerFileConfig;
+    public final static Location getSpawnLocation(){
+	return getWorld().getSpawnLocation();
     }
 
-    public void loadOrCreateConfigFile(JavaPlugin plugin) {
-	this.plugin=plugin;
-	iEnforcerFile = new File(getPATH(), getCONFIG_FILE_NAME());
-	iEnforcerFileConfig = new YamlConfiguration();
-	try {
-
-	    if (!iEnforcerFile.exists()) {
-		iEnforcerFile.getParentFile().mkdirs();
-		loadDefaultParameters();
-		iEnforcerFileConfig.options().copyDefaults(true);
-		iEnforcerFileConfig.save(iEnforcerFile);
-	    }
-	    iEnforcerFileConfig.load(iEnforcerFile);
-
-	} catch (IOException | InvalidConfigurationException e) {
-	    throw new IEncouragerException("Impossible to create the configuration "
-		    + "File due to an I/O problem",e);
-	}
-    }
-    
-    public void loadDefaultParameters(){
-	getConfig().entrySet().forEach((entry) -> {
-	    iEnforcerFileConfig.addDefault(entry.getKey(), entry.getValue());
-	});
-
-	
+    public static void globalMessage(String string) {
+	Bukkit.getServer().broadcastMessage(string);
     }
     
     /**
-     * Obtains all the initial parameters as a basic key:value set.
-     * @return the parameters
+     * Get the World assuming there is only one wold, specified on the parameters by the user. by default "world".
+     * @return the World as a Bukkit object.
      */
-    public abstract Map<String,String> getConfig();
-    
-    public static void setConfigValue(String key,String value){
-	iEnforcerFileConfig.set(key, value);
+    public final static World getWorld(){
+	return ((org.bukkit.World) Bukkit.getServer().getWorld(
+		IEncouragerConfigFile.getConfigValue("worldName")));
     }
     
-    public static String getConfigValue(String key){
-	return iEnforcerFileConfig.get(key)+"";
+    
+    public static Double round(Double i){
+	return ((double) Math.round(i * 100) / 100);
     }
     
-    /**
-     * To be Override. Usually gets config.yml but is open for personalization.
-     * @return the CONFIG_FILE_NAME the name of the file where the parameters will be stored
-     */
-    public String getCONFIG_FILE_NAME(){
-	return "config.yml";
+    public static Double round(Float i){
+	return ((double) Math.round(i * 100) / 100);
     }
     
-    /**
-     * calls <code>setPATH()</code> and returns it
-     * @return the PATH previously given path to the plug-in path configuration files.
-     */
-    public String getPATH() {
-	return "plugins" + File.separator + getPLUGIN_FOLDER_NAME() + File.separator;
-    }
 }

@@ -1,7 +1,7 @@
 /* 
- * Filename: Util.java
- *  Creation Date:  Nov 20, 2018
- *  Purpose:       
+ * Filename: ExhaustionModifier.java
+ *  Creation Date:  Dec 17, 2018
+ *  Purpose:        In substitution for the Change anything listener
  * https://creativecommons.org/licenses/by/4.0/legalcode
 
 Creative Commons Attribution 4.0 International Public License
@@ -92,37 +92,121 @@ No term or condition of this Public License will be waived and no failure to com
 Nothing in this Public License constitutes or may be interpreted as a limitation upon, or waiver of, any privileges and immunities that apply to the Licensor or You, including from the legal processes of any jurisdiction or authority.
  *
  */
+package org.white_sdev.spigot_plugins.iencourager.model;
 
-package org.whitedev.spigot.plugins.iencourager.util;
-
-import org.bukkit.Bukkit;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import org.bukkit.Location;
-import org.whitedev.spigot.plugins.iencourager.IEncouragerConfigFile;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.white_sdev.spigot_plugins.iencourager.IEncouragerConfigFile;
+import org.white_sdev.spigot_plugins.iencourager.util.Util;
 
 /**
- * Utilities
+ * This class will run a thread that will check every minute for player distance to the spawn and increase the
+ * exhaustion on the player based on that. This will be in a substitution of the old
+ * {@link package.VelocityChangesListener}
+ *
  * @author Obed Vazquez
- * @since Nov 20, 2018
+ * @mail obed.vazquez@gmail.com
+ * @since Dec 17, 2018
  */
-public abstract class Util {
+public class ExhaustionModifier {
+
+    JavaPlugin plugin=null;
+
+    
+    //<editor-fold defaultstate="collapsed" desc="SINGLETON">
+    private ExhaustionModifier(JavaPlugin plugin) {
+	this.plugin=plugin;
+    }
+    
+    private ExhaustionModifier() {
+    }
+    
+    private static ExhaustionModifier INSTANCE=null;
+
+    
+    public static ExhaustionModifier getInstance() {
+	if(INSTANCE==null) INSTANCE=new ExhaustionModifier();
+	return INSTANCE;
+    }
+    public static ExhaustionModifier getInstance(JavaPlugin plugin) {
+	if(INSTANCE==null) INSTANCE=new ExhaustionModifier(plugin);
+	return INSTANCE;
+    }
+    //</editor-fold>
+
+    ScheduledExecutorService scheduler;
+	    
+    public void start(CommandSender sender) {
+	//plugin.getLogger().info("Activating ExhaustionModifier");
+	logBack(sender, "Activating ExhaustionModifier");
+	
+	scheduler= Executors.newScheduledThreadPool(1);
+	scheduler.scheduleAtFixedRate(() -> {
+	    //plugin.getLogger().info("Calling HungerGenerator");
+
+	    //plugin.getLogger().info("Service Checking all players Distance for Exhaustion");
+	    
+	    try{
+	    Location spawnLocation = Util.getSpawnLocation();
+	    Integer distanceLowerLimit = new Integer(IEncouragerConfigFile.getConfigValue("exhaustionModifierStartDistance"));
+	    Integer distanceUpperLimit = new Integer(IEncouragerConfigFile.getConfigValue("exhaustionModifierEndDistance"));
+	    Double maxModifier = new Double(IEncouragerConfigFile.getConfigValue("maxModifier"));
+
+	    for (Player player : Util.getWorld().getPlayers()) {
+		//player.sendMessage("Checking your distance from the spawn");
+		String playerWorld = player.getWorld().getName();
+		//if the player is in the real world
+		if (!playerWorld.endsWith("_nether") && !playerWorld.endsWith("_end")) {
+		    Float traveledDistance = new Float(spawnLocation.distanceSquared(player.getLocation()))-distanceLowerLimit;
+		    
+		    if (traveledDistance > distanceLowerLimit) {
+			Float distanceAfterLower=traveledDistance-distanceLowerLimit;
+			Double addedExhaustion = traveledDistance>distanceUpperLimit?maxModifier:((distanceAfterLower * maxModifier) / (distanceUpperLimit-distanceLowerLimit));
+			Float initialExhaustion = player.getExhaustion();
+			Double modifiedExhaustion = initialExhaustion + addedExhaustion;
+			player.setExhaustion(new Float(modifiedExhaustion));
+			
+		//player.sendMessage("DT: " + Util.round(distanceAfterLower) + " Add: " + Util.round(addedExhaustion) + " - init: " + Util.round(initialExhaustion) + " - Actual: " + Util.round(modifiedExhaustion));
+		    } else {
+			//player.sendMessage("You are safe. Exhaustion: " + Util.round(player.getExhaustion()));
+		    }
+		} else {
+		    //player.sendMessage("You are not in world");
+		}
+	    }
+	    }catch(Exception e){
+		plugin.getLogger().severe("Error when checking for distance of players: "+e);
+	    }
+	    
+	}, 1, 1, TimeUnit.SECONDS);
+    }
     
     
-    
-    /**
-     * 
-     * @author Obed Vazquez
-     * @return Returns the <code>Location</code> of the World Spawn
-     * @since Nov 20, 2018
-     */
-    public final static Location getSpawnLocation(){
-	return ((org.bukkit.World) Bukkit.getServer().getWorld(
-		IEncouragerConfigFile.getConfigValue("worldName"))).getSpawnLocation();
+    public void stop(CommandSender sender) {
+	logBack(sender, "Stoping ExhaustionModifier");
+	//scheduler.shutdown();
+	logBack(sender, "Stopped ExhaustionModifier");
     }
 
-    public static void globalMessage(String string) {
-	Bukkit.getServer().broadcastMessage(string);
+    private void logBack(CommandSender sender, String message) {
+	if (!(sender instanceof Player)) {
+	    plugin.getLogger().log(Level.INFO, message);
+	} else {
+	    Player player = (Player) sender;
+	    player.sendMessage(message);
+	    plugin.getLogger().log(Level.INFO, "Player " + player.getCustomName() + ": " + message);
+	}
     }
+
     
     
     
+    
+
 }

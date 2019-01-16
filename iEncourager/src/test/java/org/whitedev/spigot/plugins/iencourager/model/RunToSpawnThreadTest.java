@@ -5,6 +5,7 @@
  */
 package org.whitedev.spigot.plugins.iencourager.model;
 
+import org.white_sdev.spigot_plugins.iencourager.model.RunToSpawn;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -13,8 +14,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
-import org.whitedev.spigot.plugins.iencourager.IEncouragerConfigFile;
-import org.whitedev.spigot.plugins.iencourager.util.ConfigFile;
+import org.white_sdev.spigot_plugins.iencourager.IEncouragerConfigFile;
+import org.white_sdev.spigot_plugins.iencourager.util.ConfigFile;
 
 
 /**
@@ -68,7 +69,7 @@ public class RunToSpawnThreadTest {
 	
 	
 	
-	RunToSpawn instance= RunToSpawn.getSingleton();
+	RunToSpawn instance= RunToSpawn.getInstance();
 	instance.start(null);
 	
 	
