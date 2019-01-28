@@ -94,8 +94,8 @@ public class RunToSpawn {
 		if (spawnLocation.distanceSquared(player.getLocation()) <= minDistance) {
 
 		    player.sendMessage("You are one of the winners! You won: " + maxRewards + " gold");
-		    player.getWorld().playSound(player.getLocation(), Sound.ENTITY_FIREWORK_LAUNCH, 1, 2);
-		    player.getWorld().playSound(player.getLocation(), Sound.ENTITY_FIREWORK_TWINKLE, 1, 2);
+		    player.getWorld().playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 1, 2);
+		    player.getWorld().playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_TWINKLE, 1, 2);
 		    player.getWorld().playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
 
 		    winnersCounter++;
@@ -107,7 +107,7 @@ public class RunToSpawn {
 		    if (spawnLocation.distanceSquared(player.getLocation()) > maxDistance) {
 			player.sendMessage("Sorry, you were too far from the spawn :( you are not getting the reward.  "
 				+ "Remember that you get hungry faster if you are too far from the spawn.");
-			player.getWorld().playSound(player.getLocation(), Sound.ENTITY_FIREWORK_LAUNCH, 1, 2);
+			player.getWorld().playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 1, 2);
 		    } else {
 			Double distanceFromMin = spawnLocation.distanceSquared(player.getLocation()) - minDistance;
 			Double walkedDistance = maxDistance - distanceFromMin;
