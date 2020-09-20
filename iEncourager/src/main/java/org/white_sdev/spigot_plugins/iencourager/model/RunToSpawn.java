@@ -64,8 +64,12 @@ public class RunToSpawn {
 		try {
 		    Calendar calendarToSleep = Calendar.getInstance();
 		    firstSleepMilli += 10000;
-		    calendarToSleep.setTimeInMillis(firstSleepMilli);
-		    plugin.getLogger().info("Sleeping main event process will awake on: " + calendarToSleep.get(Calendar.MINUTE) + "mins " + calendarToSleep.get(Calendar.SECOND) + "secs. For recalculations");
+		    try{
+			calendarToSleep.add(Calendar.MILLISECOND,firstSleepMilli.intValue());
+		    }catch(Exception e){
+			plugin.getLogger().log(Level.WARNING,"Problem formating log data, the next log is corrupted"); 
+		    }
+		    plugin.getLogger().log(Level.INFO, "Sleeping main event process will awake on: {0}mins {1}secs. For recalculations", new Object[]{calendarToSleep.get(Calendar.MINUTE), calendarToSleep.get(Calendar.SECOND)});
 		    Thread.sleep(firstSleepMilli);
 
 		} catch (InterruptedException ex) {
@@ -84,7 +88,7 @@ public class RunToSpawn {
 	 * @param minDistance how far can the player be from the spawn to be considered a full price winer
 	 * @param maxDistance how close can the player be from the spawn and still be considered a loser
 	 */
-	public void calculateAndShowEventResults(Integer minRewards, Integer maxRewards, Long minDistance, Long maxDistance) {
+	public synchronized void calculateAndShowEventResults(Integer minRewards, Integer maxRewards, Long minDistance, Long maxDistance) {
 	    Location spawnLocation = Util.getSpawnLocation();
 	    plugin.getLogger().info("Delivering rewards of the event.");
 	    Integer winnersCounter = 0;
@@ -138,7 +142,7 @@ public class RunToSpawn {
 	 * @param firstSleepMilli How much time left for the event
 	 * @param maxRewards	How much can the players get at this event
 	 */
-	public void launchAlertThreads(Long firstSleepMilli, Integer minRewards, Integer maxRewards, Long minDistance, Long maxDistance) {
+	public synchronized void launchAlertThreads(Long firstSleepMilli, Integer minRewards, Integer maxRewards, Long minDistance, Long maxDistance) {
 	    new OneMinAlert(firstSleepMilli, maxRewards).start();
 	    new FifteenSecAlert(firstSleepMilli, minRewards, maxRewards, minDistance, maxDistance).start();
 	}
@@ -216,7 +220,7 @@ public class RunToSpawn {
 	    try {
 		Calendar calendarToSleep = Calendar.getInstance();
 		calendarToSleep.setTimeInMillis(firstSleepMilli - (15 * 1000));
-		plugin.getLogger().info("Sleeping 15sec alert for: " + calendarToSleep.get(Calendar.MINUTE) + "mins " + calendarToSleep.get(Calendar.SECOND) + "secs");
+		plugin.getLogger().log(Level.INFO, "Sleeping 15sec alert for: {0}mins {1}secs", new Object[]{calendarToSleep.get(Calendar.MINUTE), calendarToSleep.get(Calendar.SECOND)});
 		Thread.sleep(firstSleepMilli - (15 * 1000));
 
 		plugin.getLogger().info("15sec Alert Broadcasting:");
