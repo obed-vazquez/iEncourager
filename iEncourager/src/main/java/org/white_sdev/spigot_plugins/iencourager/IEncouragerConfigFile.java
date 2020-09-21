@@ -95,7 +95,7 @@ Nothing in this Public License constitutes or may be interpreted as a limitation
 
 package org.white_sdev.spigot_plugins.iencourager;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.white_sdev.spigot_plugins.iencourager.util.ConfigFile;
 
@@ -118,7 +118,7 @@ public class IEncouragerConfigFile extends ConfigFile{
     
     @Override
     public Map<String,String> getConfig(){
-	HashMap<String,String> parameters=new HashMap<>();
+	LinkedHashMap<String,String> parameters=new LinkedHashMap<>();
 	parameters.put("exhaustionModifierStartDistance", "40000");
 	parameters.put("exhaustionModifierEndDistance", "100000");
 	parameters.put("maxModifier", ".5");
@@ -129,6 +129,7 @@ public class IEncouragerConfigFile extends ConfigFile{
 	parameters.put("diezSegundosRestantes", "El evento ha iniciado! Entre más cerca del Spawn mejor! CORRE!!");
 	parameters.put("worldName", "world");
 	parameters.put("serverCommandToGiveMoney", "mh money give ");
+	parameters.put("serverCommandToDeposit", "eco give ");
 	parameters.put("winEventDistance", "1000");
 	parameters.put("outOfEventDistance", "60000");
 	parameters.put("weekEventMinRewards", "4000");

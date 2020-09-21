@@ -15,10 +15,94 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.white_sdev.spigot_plugins.iencourager.IEncouragerConfigFile;
 import org.white_sdev.spigot_plugins.iencourager.exceptions.IEncouragerException;
 import org.white_sdev.spigot_plugins.iencourager.util.Util;
+import static org.white_sdev.white_validations.parameters.ParameterValidator.notNullValidation;
 
 public class RunToSpawn {
 
+    Logger logger=Logger.getLogger(RunToSpawn.class.getName());
     private JavaPlugin plugin;
+    
+    //<editor-fold defaultstate="collapsed" desc="SINGLETON">
+
+    private static RunToSpawn singleton = null;
+
+    public static RunToSpawn getInstance() {
+	if (singleton == null) {
+	    singleton = new RunToSpawn();
+	}
+	return singleton;
+    }
+
+    public static RunToSpawn getInstance(JavaPlugin plugin) {
+	if (singleton == null) {
+	    singleton = new RunToSpawn();
+	}
+	singleton.plugin = plugin;
+	return singleton;
+    }
+    //</editor-fold>
+
+    /**
+     * Launches the whole Event process.
+     *
+     * @param sender who is launching the process. So the plug-in can answer to it/h(er)im
+     */
+    public void start(CommandSender sender) {
+	if (!(sender instanceof Player)) {
+	    if (sender != null) {
+		sender.sendMessage("Activating Event by Server");
+	    }
+	    thread = new RunToSpawnThread(sender);
+	    thread.plugin = this.plugin;
+	    thread.start();
+	    if (sender != null) {
+		sender.sendMessage("Activated");
+	    }
+	} else {
+	    Player player = (Player) sender;
+	    player.sendMessage("Activating by Player");
+	    thread = new RunToSpawnThread(sender);
+	    thread.plugin = this.plugin;
+	    thread.start();
+	    player.sendMessage("Activated");
+	}
+    }
+
+    /**
+     * Interrupts the event process.
+     *
+     * @param sender who is stopping the process. So the plug-in can answer to it/h(er)im
+     */
+    public void stop(CommandSender sender) {
+	if (!(sender instanceof Player)) {
+	    sender.sendMessage("Deactivating Event by Server");
+	    thread.interrupt();
+	    thread = null;
+	    sender.sendMessage("Deactivated");
+	} else {
+	    Player player = (Player) sender;
+	    player.sendMessage("Deactivating by Player");
+	    thread.interrupt();
+	    thread = null;
+	    player.sendMessage("Deactivated");
+	}
+    }
+    
+    public void forcedLaunch(){
+	try{
+	    logger.info("::forcedLaunch() - Start: Launching event");
+	    ForcedRunToSpawnThread forcedRunToSpawnThread = new ForcedRunToSpawnThread();
+	    forcedRunToSpawnThread.plugin = this.plugin;
+	    forcedRunToSpawnThread.start();
+	    logger.info("::forcedLaunch() - Finished: Event launched in another thread");
+	}catch(Exception ex){
+	    throw new IEncouragerException("Impossible to launch the event due to an unexpected error.", ex);
+	}
+	
+    }
+    
+    private RunToSpawnThread thread = null;
+    private ForcedRunToSpawnThread forcedThread=null;
 
     private class RunToSpawnThread extends Thread {
 
@@ -35,12 +119,13 @@ public class RunToSpawn {
 		//Waiting for the server to load (for logging purposes, you can eliminate the wait)...
 		Thread.sleep(20 * 1000);
 	    } catch (InterruptedException ex) {
-		Logger.getLogger(RunToSpawn.class.getName()).log(Level.SEVERE, null, ex);
+		logger.log(Level.SEVERE, null, ex);
 	    }
 	    String eventTime;
 
 	    do {
-		plugin.getLogger().info("Starting time of event process");
+		
+		logger.info("::RunToSpawnThread.run() : Starting time of event process");
 		Calendar nextHour = Calendar.getInstance();
 		nextHour.setTimeInMillis(Calendar.getInstance().getTimeInMillis() + (60000 * 60));
 		if (nextHour.get(Calendar.HOUR_OF_DAY) == 19 || nextHour.get(Calendar.HOUR_OF_DAY) == 18) {
@@ -67,9 +152,9 @@ public class RunToSpawn {
 		    try{
 			calendarToSleep.add(Calendar.MILLISECOND,firstSleepMilli.intValue());
 		    }catch(Exception e){
-			plugin.getLogger().log(Level.WARNING,"Problem formating log data, the next log is corrupted"); 
+			logger.warning("::RunToSpawnThread.run() : Problem formating log data, the next log is corrupted");
 		    }
-		    plugin.getLogger().log(Level.INFO, "Sleeping main event process will awake on: {0}mins {1}secs. For recalculations", new Object[]{calendarToSleep.get(Calendar.MINUTE), calendarToSleep.get(Calendar.SECOND)});
+		    logger.log(Level.INFO, "Sleeping main event process will awake on: {0}mins {1}secs. For recalculations", new Object[]{calendarToSleep.get(Calendar.MINUTE), calendarToSleep.get(Calendar.SECOND)});
 		    Thread.sleep(firstSleepMilli);
 
 		} catch (InterruptedException ex) {
@@ -90,28 +175,46 @@ public class RunToSpawn {
 	 */
 	public synchronized void calculateAndShowEventResults(Integer minRewards, Integer maxRewards, Long minDistance, Long maxDistance) {
 	    Location spawnLocation = Util.getSpawnLocation();
-	    plugin.getLogger().info("Delivering rewards of the event.");
+	    logger.info("Delivering rewards of the event.");
 	    Integer winnersCounter = 0;
 	    for (Player player : Bukkit.getOnlinePlayers()) {
 		//player.sendMessage("IEncourager message: Your position is being monitored");
 
 		if (spawnLocation.distanceSquared(player.getLocation()) <= minDistance) {
 
-		    player.sendMessage("You are one of the winners! You won: " + maxRewards + " gold");
-		    player.getWorld().playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 1, 2);
-		    player.getWorld().playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_TWINKLE, 1, 2);
-		    player.getWorld().playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+		    player.sendMessage("You are one of the winners! You won: $$" + maxRewards);
+		    try{
+			Sounds.FIREWORK_LAUNCH.play(player);
+			Sounds.FIREWORK_BLAST2.play(player);
+			Sounds.FIREWORK_LARGE_BLAST.play(player);
+			Sounds.FIREWORK_TWINKLE.play(player);
 
+//			launchSound(player,Sound.ENTITY_FIREWORK_ROCKET_LAUNCH);
+//			launchSound(player,Sound.ENTITY_FIREWORK_ROCKET_TWINKLE);
+//			launchSound(player,Sound.ENTITY_PLAYER_LEVELUP);
+		    }catch(Exception ex){
+			logger.log(Level.WARNING, "Impossible to reproduce ANY sound due to an exception:{0}", ex);
+		    }
 		    winnersCounter++;
-		    String serverCommandToGiveMoneyParameter = IEncouragerConfigFile.
-			    getConfigValue("serverCommandToGiveMoney");
-		    getServer().dispatchCommand(getServer().getConsoleSender(),
-			    serverCommandToGiveMoneyParameter + player.getName() + " " + maxRewards);
+		    
+		    //CORE
+		    String commandToExecute = IEncouragerConfigFile.getConfigValue(player.getInventory().firstEmpty() == -1? //is Player's inventory full?
+			    "serverCommandToDeposit":"serverCommandToGiveMoney") 
+			    + player.getName() + " " + maxRewards;
+		    
+		    
+		    try{
+			getServer().dispatchCommand(getServer().getConsoleSender(),commandToExecute);
+		    }catch(Exception ex){
+			throw new IEncouragerException("En exception has ocurred while executing rewards command - have you implemented the economics plugin? Have you configured the command at \\plugins\\iEncourager\\config.yml?", ex);
+		    }
 		} else {
 		    if (spawnLocation.distanceSquared(player.getLocation()) > maxDistance) {
 			player.sendMessage("Sorry, you were too far from the spawn :( you are not getting the reward.  "
 				+ "Remember that you get hungry faster if you are too far from the spawn.");
-			player.getWorld().playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 1, 2);
+			    Sounds.FIREWORK_LAUNCH.play(player);
+			    Sounds.FIREWORK_BLAST2.play(player);
+//			player.getWorld().playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 1, 2);
 		    } else {
 			Double distanceFromMin = spawnLocation.distanceSquared(player.getLocation()) - minDistance;
 			Double walkedDistance = maxDistance - distanceFromMin;
@@ -133,7 +236,16 @@ public class RunToSpawn {
 
 		}
 	    }
-	    plugin.getLogger().info("Delivering rewards of the event. " + winnersCounter + " Winner" + (winnersCounter == 1 ? "" : "s"));
+	    logger.info("Delivering rewards of the event. " + winnersCounter + " Winner" + (winnersCounter == 1 ? "" : "s"));
+	}
+	
+	public synchronized void launchSound(Player player, Sound sound){
+	    notNullValidation(new Object[]{player,sound},"You need to provide a Player and a Sand to reproduce to him/her");
+	    try{
+		player.getWorld().playSound(player.getLocation(), sound, 1, 2);
+	    }catch(Exception ex){
+		logger.log(Level.WARNING, "Impossible to reproduce sound due to an exception:{0}", ex);
+	    }
 	}
 
 	/**
@@ -182,9 +294,9 @@ public class RunToSpawn {
 	    try {
 		Calendar calendarToSleep = Calendar.getInstance();
 		calendarToSleep.setTimeInMillis(firstSleepMilli - (60 * 1000));
-		plugin.getLogger().info("Sleeping 1min alert for: " + calendarToSleep.get(Calendar.MINUTE) + "mins " + calendarToSleep.get(Calendar.SECOND) + "secs");
+		logger.info("Sleeping 1min alert for: " + calendarToSleep.get(Calendar.MINUTE) + "mins " + calendarToSleep.get(Calendar.SECOND) + "secs");
 		Thread.sleep(firstSleepMilli - (60 * 1000));
-		plugin.getLogger().info("Awake sending 1 minute left Alert to server!");
+		logger.info("Awake sending 1 minute left Alert to server!");
 		Bukkit.getServer().broadcastMessage(ChatColor.YELLOW +IEncouragerConfigFile.getConfigValue(
 			"oneMinuteRemainingMessage") + ".. You can get up to: " + maxRewards + " gold.");
 		Bukkit.getServer().broadcastMessage(ChatColor.BLUE +IEncouragerConfigFile.getConfigValue(
@@ -194,7 +306,7 @@ public class RunToSpawn {
 		});
 
 	    } catch (InterruptedException ex) {
-		Logger.getLogger(RunToSpawn.class.getName()).log(Level.SEVERE, null, ex);
+		logger.log(Level.SEVERE, null, ex);
 	    }
 	}
     }
@@ -219,11 +331,19 @@ public class RunToSpawn {
 	public void run() {
 	    try {
 		Calendar calendarToSleep = Calendar.getInstance();
-		calendarToSleep.setTimeInMillis(firstSleepMilli - (15 * 1000));
-		plugin.getLogger().log(Level.INFO, "Sleeping 15sec alert for: {0}mins {1}secs", new Object[]{calendarToSleep.get(Calendar.MINUTE), calendarToSleep.get(Calendar.SECOND)});
-		Thread.sleep(firstSleepMilli - (15 * 1000));
+		long millisToSleep=firstSleepMilli - (15 * 1000);
+		if(millisToSleep<0)millisToSleep=0;
+		
+		calendarToSleep.setTimeInMillis(millisToSleep);
+		logger.log(Level.INFO, "Sleeping the '15sec-alert' for: {0}mins {1}secs or {2}millisecs", new Object[]{calendarToSleep.get(Calendar.MINUTE), calendarToSleep.get(Calendar.SECOND),millisToSleep});
+		
+		if(millisToSleep>0){
+		    Thread.sleep(millisToSleep);
+		}else{
+		    logger.warning("::FifteenSecAlert.run():: Starting inmmediatly! ");
+		}
 
-		plugin.getLogger().info("15sec Alert Broadcasting:");
+		logger.info("15sec Alert Broadcasting:");
 		Bukkit.getServer().broadcastMessage(ChatColor.YELLOW + IEncouragerConfigFile.
 			getConfigValue("tenSecsRemainingMessage"));
 		Bukkit.getServer().broadcastMessage(ChatColor.BLUE + IEncouragerConfigFile.
@@ -236,75 +356,29 @@ public class RunToSpawn {
 		thread.calculateAndShowEventResults(minRewards, maxRewards, minDistance, maxDistance);
 
 	    } catch (InterruptedException ex) {
-		Logger.getLogger(RunToSpawn.class.getName()).log(Level.SEVERE, null, ex);
+		logger.log(Level.SEVERE, null, ex);
 	    }
 	}
     }
+    
+    
+    private class ForcedRunToSpawnThread extends Thread{
+	JavaPlugin plugin;
 
-    private RunToSpawnThread thread = null;
-    //<editor-fold defaultstate="collapsed" desc="SINGLETON">
-
-    private static RunToSpawn singleton = null;
-
-    public static RunToSpawn getInstance() {
-	if (singleton == null) {
-	    singleton = new RunToSpawn();
-	}
-	return singleton;
-    }
-
-    public static RunToSpawn getInstance(JavaPlugin plugin) {
-	if (singleton == null) {
-	    singleton = new RunToSpawn();
-	}
-	singleton.plugin = plugin;
-	return singleton;
-    }
-//</editor-fold>
-
-    /**
-     * Launches the whole Event process.
-     *
-     * @param sender who is launching the process. So the plug-in can answer to it/h(er)im
-     */
-    public void start(CommandSender sender) {
-	if (!(sender instanceof Player)) {
-	    if (sender != null) {
-		sender.sendMessage("Activating Event by Server");
-	    }
-	    thread = new RunToSpawnThread(sender);
-	    thread.plugin = this.plugin;
-	    thread.start();
-	    if (sender != null) {
-		sender.sendMessage("Activated");
-	    }
-	} else {
-	    Player player = (Player) sender;
-	    player.sendMessage("Activating by Player");
-	    thread = new RunToSpawnThread(sender);
-	    thread.plugin = this.plugin;
-	    thread.start();
-	    player.sendMessage("Activated");
+	@Override
+	public void run(){
+	    String eventTime = "hour";
+	    Integer minRewards = new Integer(IEncouragerConfigFile.getConfigValue(eventTime + "EventMinRewards"));
+	    Integer maxRewards = new Integer(IEncouragerConfigFile.getConfigValue(eventTime + "EventMaxRewards"));
+	    Long minDistance = new Long(IEncouragerConfigFile.getConfigValue("winEventDistance"));
+	    Long maxDistance = new Long(IEncouragerConfigFile.getConfigValue("outOfEventDistance"));
+	    
+	    logger.info( "::ForcedRunToSpawnThread.run(): Data read. Calling for alert to let players know and calculate the result");
+	    
+	    //sleeping for 15 +1 seconds
+	    new FifteenSecAlert(16000l, minRewards, maxRewards, minDistance, maxDistance).start();
 	}
     }
 
-    /**
-     * Interrupts the event process.
-     *
-     * @param sender who is stopping the process. So the plug-in can answer to it/h(er)im
-     */
-    public void stop(CommandSender sender) {
-	if (!(sender instanceof Player)) {
-	    sender.sendMessage("Deactivating Event by Server");
-	    thread.interrupt();
-	    thread = null;
-	    sender.sendMessage("Deactivated");
-	} else {
-	    Player player = (Player) sender;
-	    player.sendMessage("Deactivating by Player");
-	    thread.interrupt();
-	    thread = null;
-	    player.sendMessage("Deactivated");
-	}
-    }
+    
 }

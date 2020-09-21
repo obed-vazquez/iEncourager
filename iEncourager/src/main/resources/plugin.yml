@@ -13,3 +13,7 @@ commands:
     description: stops the cicle of the command specified in the config file.
     aliases: [detenerIE]
     usage: /stopIE
+  launchTestIE:
+    description: launches a test (not really) event Running to the spawn.
+    aliases: [iniciarPruebaIE]
+    usage: /launchTestIE
