@@ -63,7 +63,7 @@ public class StartCommandTest {
 	
 	String label = "";
 	String[] args = null;
-	StartCommand instance = StartCommand.getInstance();
+	StartCommand instance = StartCommand.getInstance(true);
 	
 	
 	//when(pluginMock.getLogger()).thenReturn( Logger.getLogger(StartCommandTest.class.getName()) );

@@ -9,6 +9,8 @@ import org.bukkit.entity.Player;
  * Version independent spigot sounds.
  */
 public enum Sounds {
+    //<editor-fold defaultstate="collapsed" desc="Registered Sounds">
+
     AMBIENCE_CAVE("AMBIENCE_CAVE", "AMBIENT_CAVE"),
     AMBIENCE_RAIN("AMBIENCE_RAIN", "WEATHER_RAIN"),
     AMBIENCE_THUNDER("AMBIENCE_THUNDER", "ENTITY_LIGHTNING_THUNDER", "ENTITY_LIGHTNING_BOLT_THUNDER"),
@@ -266,6 +268,7 @@ public enum Sounds {
     VILLAGER_NO("VILLAGER_NO", "ENTITY_VILLAGER_NO"),
     VILLAGER_YES("VILLAGER_YES", "ENTITY_VILLAGER_YES");
 
+//</editor-fold>
     private String sound8;
     private String sound912;
     private String sound13;

@@ -14,10 +14,10 @@ public class IEncouragerPlugin extends JavaPlugin {
     public void onEnable() {
 	try {
 	    super.onEnable();
-	    IEncouragerConfigFile.getInstance().loadOrCreateConfigFile(this);
-	    StartCommand.getInstance().startExecutorPlugin(this);
-	    StopCommand.getInstance().startExecutorPlugin(this);
-	    this.getCommand("launchTestIE").setExecutor(LaunchTestCommand.getInstance());
+	    IEncouragerConfigFile.getInstance(this).loadOrCreateConfigFile(this);
+	    StartCommand.getInstance(this).startExecutorPlugin(this);
+	    StopCommand.getInstance(this).startExecutorPlugin(this);
+	    this.getCommand("launchTestIE").setExecutor(LaunchTestCommand.getInstance(this));
 	    //getServer().getPluginManager().registerEvents(new VelocityChangesListener(), this);
 	    RunToSpawn.getInstance(this).start(getServer().getConsoleSender());
 	    ExhaustionModifier.getInstance(this).start(getServer().getConsoleSender());

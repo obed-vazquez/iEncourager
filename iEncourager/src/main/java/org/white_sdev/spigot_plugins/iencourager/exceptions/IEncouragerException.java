@@ -105,5 +105,8 @@ public class IEncouragerException extends RuntimeException{
     public IEncouragerException(String string, Exception e) {
 	super(string,e);
     }
+    public IEncouragerException(String string) {
+	super(string);
+    }
     
 }

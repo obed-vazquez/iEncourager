@@ -97,7 +97,12 @@ package org.white_sdev.spigot_plugins.iencourager;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.logging.Logger;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.white_sdev.spigot_plugins.iencourager.exceptions.IEncouragerException;
+import org.white_sdev.spigot_plugins.iencourager.model.RunToSpawn;
 import org.white_sdev.spigot_plugins.iencourager.util.ConfigFile;
+import static org.white_sdev.white_validations.parameters.ParameterValidator.notNullValidation;
 
 /**
  * 
@@ -106,13 +111,58 @@ import org.white_sdev.spigot_plugins.iencourager.util.ConfigFile;
  */
 public class IEncouragerConfigFile extends ConfigFile{
     
-    //<editor-fold defaultstate="collapsed" desc="SINGLETON">
-    private IEncouragerConfigFile() {}
-    private static class IEncouragerConfigFileHolder {
-	private static final IEncouragerConfigFile INSTANCE = new IEncouragerConfigFile();
+    public static Logger logger;
+    private JavaPlugin plugin;
+
+    //<editor-fold defaultstate="collapsed" desc="Provisional for testing">
+    
+    public static IEncouragerConfigFile getInstance(boolean testing) {
+	if (testing == true) SINGLETON = new IEncouragerConfigFile(testing);
+	return SINGLETON;
     }
+    
+    
+    private IEncouragerConfigFile(boolean testing){
+	if(testing==false) throw new UnsupportedOperationException("Provisional testing-only operation.");
+	plugin=null;
+    }
+    
+    //</editor-fold>
+    
+    //<editor-fold defaultstate="collapsed" desc="SINGLETON">
+    private static IEncouragerConfigFile SINGLETON = null;
+
+    /**
+     * Class Constructor. Private constructor making a singleton with this.
+     *
+     * @author <a href="mailto:obed.vazquez@gmail.com">Obed Vazquez</a>
+     * @since Sep 20, 2020
+     * @param parameter The parameter to create the object.
+     * @throws IllegalArgumentException - if the argument provided is null.
+     */
+    private IEncouragerConfigFile(JavaPlugin plugin){
+	notNullValidation(plugin,"You must provide a plugin reference to instanciate the event");
+	if(plugin.getLogger()==null){
+	    logger = Logger.getLogger(RunToSpawn.class.getName());
+	    logger.warning("Class initialized without plugin link. Loggers will have no parent");
+	}else{
+	    logger=plugin.getLogger();
+	}
+	this.plugin=plugin;
+    }
+    
     public static IEncouragerConfigFile getInstance() {
-	return IEncouragerConfigFileHolder.INSTANCE;
+	if (SINGLETON == null) 
+	    throw new IEncouragerException("You can only retrieve a singleton with no plugin once it has been instanciated. "
+		    + "You must provide a plugin reference to instanciate the event for the first time");
+	return SINGLETON;
+    }
+
+    public static IEncouragerConfigFile getInstance(JavaPlugin plugin) {
+	if (SINGLETON == null) {
+	    SINGLETON = new IEncouragerConfigFile(plugin);
+	}
+	return SINGLETON;
     }
     //</editor-fold>
     

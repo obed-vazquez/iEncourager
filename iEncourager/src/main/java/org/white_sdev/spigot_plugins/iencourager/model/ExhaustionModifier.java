@@ -98,12 +98,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.white_sdev.spigot_plugins.iencourager.IEncouragerConfigFile;
+import org.white_sdev.spigot_plugins.iencourager.exceptions.IEncouragerException;
 import org.white_sdev.spigot_plugins.iencourager.util.Util;
+import static org.white_sdev.white_validations.parameters.ParameterValidator.notNullValidation;
 
 /**
  * This class will run a thread that will check every minute for player distance to the spawn and increase the
@@ -116,27 +119,35 @@ import org.white_sdev.spigot_plugins.iencourager.util.Util;
  */
 public class ExhaustionModifier {
 
-    JavaPlugin plugin=null;
+    public static Logger log;
+    private final JavaPlugin plugin;
 
-    
     //<editor-fold defaultstate="collapsed" desc="SINGLETON">
-    private ExhaustionModifier(JavaPlugin plugin) {
+    private static ExhaustionModifier SINGLETON = null;
+
+    private ExhaustionModifier(JavaPlugin plugin){
+	notNullValidation(plugin,"You must provide a plugin reference to instanciate the event");
+	if(plugin.getLogger()==null){
+	    log = Logger.getLogger(RunToSpawn.class.getName());
+	    log.warning("Class initialized without plugin link. Loggers will have no parent");
+	}else{
+	    log=plugin.getLogger();
+	}
 	this.plugin=plugin;
     }
     
-    private ExhaustionModifier() {
-    }
-    
-    private static ExhaustionModifier INSTANCE=null;
-
-    
     public static ExhaustionModifier getInstance() {
-	if(INSTANCE==null) INSTANCE=new ExhaustionModifier();
-	return INSTANCE;
+	if (SINGLETON == null) 
+	    throw new IEncouragerException("You can only retrieve a singleton with no plugin once it has been instanciated. "
+		    + "You must provide a plugin reference to instanciate the event for the first time");
+	return SINGLETON;
     }
+
     public static ExhaustionModifier getInstance(JavaPlugin plugin) {
-	if(INSTANCE==null) INSTANCE=new ExhaustionModifier(plugin);
-	return INSTANCE;
+	if (SINGLETON == null) {
+	    SINGLETON = new ExhaustionModifier(plugin);
+	}
+	return SINGLETON;
     }
     //</editor-fold>
 

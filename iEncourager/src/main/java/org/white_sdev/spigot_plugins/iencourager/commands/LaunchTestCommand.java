@@ -26,10 +26,12 @@ import static org.white_sdev.white_validations.parameters.ParameterValidator.not
  */
 public class LaunchTestCommand implements CommandExecutor{
 
-    Logger logger= Logger.getLogger(LaunchTestCommand.class.getName());
-    public JavaPlugin plugin;
-    
-    //<editor-fold defaultstate="collapsed" desc="Singleton">
+    public static Logger logger;
+    private JavaPlugin plugin;
+
+    //<editor-fold defaultstate="collapsed" desc="SINGLETON">
+    private static LaunchTestCommand SINGLETON = null;
+
     /**
      * Class Constructor. Private constructor making a singleton with this.
      *
@@ -38,16 +40,29 @@ public class LaunchTestCommand implements CommandExecutor{
      * @param parameter The parameter to create the object.
      * @throws IllegalArgumentException - if the argument provided is null.
      */
-    private LaunchTestCommand() {
+    private LaunchTestCommand(JavaPlugin plugin){
+	notNullValidation(plugin,"You must provide a plugin reference to instanciate the event");
+	if(plugin.getLogger()==null){
+	    logger = Logger.getLogger(RunToSpawn.class.getName());
+	    logger.warning("Class initialized without plugin link. Loggers will have no parent");
+	}else{
+	    logger=plugin.getLogger();
+	}
+	this.plugin=plugin;
     }
-
-    private static class LaunchTestCommandHolder {
-
-	private static final LaunchTestCommand INSTANCE = new LaunchTestCommand();
-    }
-
+    
     public static LaunchTestCommand getInstance() {
-	return LaunchTestCommandHolder.INSTANCE;
+	if (SINGLETON == null) 
+	    throw new IEncouragerException("You can only retrieve a singleton with no plugin once it has been instanciated. "
+		    + "You must provide a plugin reference to instanciate the event for the first time");
+	return SINGLETON;
+    }
+
+    public static LaunchTestCommand getInstance(JavaPlugin plugin) {
+	if (SINGLETON == null) {
+	    SINGLETON = new LaunchTestCommand(plugin);
+	}
+	return SINGLETON;
     }
     //</editor-fold>
 
