@@ -109,4 +109,27 @@ public class IEncouragerException extends RuntimeException{
 	super(string);
     }
     
+    public String getCauses(){
+	final String BREAKLINE="\n";
+	final String BREAKLINE_REGEX="[[\\r\\n]\\r\\n]";
+	
+	String causes= "Cause: "+getMessage()+BREAKLINE;
+	String causeMessage;
+	String lastAt="";
+	for(Throwable cause=this.getCause();cause!=null;cause=cause.getCause()){
+	    causeMessage=cause.getMessage();
+	    if(causeMessage!=null && !causeMessage.isBlank()){
+		
+		String[] causedBy=causeMessage.split(BREAKLINE_REGEX);
+		
+		causes+="Cause: "+causedBy[0]+BREAKLINE;
+		//causes+="---"+cause.getLocalizedMessage();
+		//lastAt=causedBy.length>1?causedBy[1]:"";
+		
+	    }
+	}
+	causes+=lastAt;
+	return causes;
+    }
+    
 }

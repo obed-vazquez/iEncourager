@@ -5,6 +5,7 @@ import java.util.GregorianCalendar;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import static org.bukkit.Bukkit.getServer;
 import org.bukkit.ChatColor;
@@ -14,6 +15,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.white_sdev.spigot_plugins.iencourager.IEncouragerConfigFile;
+import org.white_sdev.spigot_plugins.iencourager.IEncouragerPlugin;
 import org.white_sdev.spigot_plugins.iencourager.exceptions.IEncouragerException;
 import org.white_sdev.spigot_plugins.iencourager.util.Util;
 import static org.white_sdev.white_validations.parameters.ParameterValidator.notNullValidation;
@@ -137,16 +139,17 @@ public class RunToSpawn {
     //</editor-fold>
         
     /**
-     * Main method of the class which determines what will the rewards for the players be depending on their distance off the spawn. The players that are not full price winners and
-     * are not losers will be rewarded with a respective amount of gold of the distance they achieved.
+     * Main method of the class which determines what will the rewards for the players be depending on their distance off the spawn. 
+     * The players that are not full price winners and are not losers (0 price) will be rewarded with a respective amount of gold of the distance they achieved.
      *
      * @param minRewards
      * @param maxRewards
      * @param minDistance how far can the player be from the spawn to be considered a full price winer
      * @param maxDistance how close can the player be from the spawn and still be considered a loser
      */
-    public static synchronized void calculateAndShowEventResults(Integer minRewards, Integer maxRewards, Long minDistance, Long maxDistance) {
+    public static synchronized void calculateAndShowEventResults(IEncouragerPlugin plugin, Integer minRewards, Integer maxRewards, Long minDistance, Long maxDistance) {
 	logger.info(":: calculateAndShowEventResults(minRewards,maxRewards,minDistance,maxDistance):: - Start.");
+	if( minRewards==null) minRewards=0;
 	Location spawnLocation = Util.getSpawnLocation();
 	logger.info(":: calculateAndShowEventResults(minRewards,maxRewards,minDistance,maxDistance):: Delivering rewards of the event.");
 	try {
@@ -162,12 +165,14 @@ public class RunToSpawn {
 		    winnersCounter++;
 
 		    playSuccessSounds(player);
-		    tryToPay(player, maxRewards);
+		    tryToPay(plugin, player, maxRewards);
 
 		} else {
 		    if (spawnLocation.distanceSquared(player.getLocation()) > maxDistance) {
 			player.sendMessage("Sorry, you were too far from the spawn :( you are not getting the reward.  "
 				+ "Remember that you get hungry faster if you are too far from the spawn.");
+			player.sendMessage("&eLo siento, estas demaciado lejos del spawn para obtener el premio.  "
+				+ "Recuerda que entre más lejos te encuentres del spawn provocará que tengas hambre más rápido.");
 			playPatrialSuccessSounds(player);
 
 		    } else {
@@ -181,9 +186,11 @@ public class RunToSpawn {
 			winnersCounter++;
 
 			player.sendMessage("Sory you couldn't make it on time, but you were so close! "
-				+ "Here is your reward: $$" + partialReward);
+				+ "Here is your reward:");
+			player.sendMessage("&eLo siento, no llegaste a tiempo, pero estubiste muy cerca! "
+				+ "Aquí esta tu premio: \n$$" + partialReward);
 			playFailureSounds(player);
-			tryToPay(player, partialReward);
+			tryToPay(plugin, player, partialReward);
 		    }
 
 		}
@@ -259,19 +266,42 @@ public class RunToSpawn {
     
     //<editor-fold defaultstate="collapsed" desc="Rewards Methods">
 
-    public static synchronized void payPrice(Player player, Long rewards) {
+    public static synchronized void payPrice(IEncouragerPlugin plugin, Player player, Long rewards) {
 	logger.finer("::payPrice(player,rewards) - Start: ");
 	if (rewards == null) {
 	    logger.warning("::payPrice(parameter): if you want to pay money to a player the ammount must be specified (Ignoring the payout)");
 	    return;
 	}
 	try {
-
-	    String commandToExecute = IEncouragerConfigFile.getConfigValue(player.getInventory().firstEmpty() == -1
-		    ? //is Player's inventory full?
-		    "serverCommandToDeposit" : "serverCommandToGiveMoney")
-		    + player.getName() + " " + rewards;
-	    getServer().dispatchCommand(getServer().getConsoleSender(), commandToExecute);
+	    //should I use plugin instance instead of Class reference? if not, the plugin parameter is not required in a lot of methods :S
+	    Economy economy=IEncouragerPlugin.getEconomy();
+	    if(economy!=null){
+		Double balance=economy.getBalance(player);
+		player.sendMessage(ChatColor.YELLOW +"Previous Balance - "+ChatColor.BLUE +"Nuevo Balance: "+ChatColor.WHITE +"$$"+ChatColor.GREEN+balance.floatValue());
+		
+		economy.depositPlayer(player, rewards);
+		balance=economy.getBalance(player);
+		
+		player.sendMessage(ChatColor.YELLOW +"New Balance - "+ChatColor.BLUE +"Nuevo Balance: "+ChatColor.WHITE +"$$"+ChatColor.GREEN+balance.floatValue());
+		
+	    }else{
+		logger.info("::payPrice(player,rewards): Not Economy plugin detected, trying dangerous custom command.");
+		
+		String commandToExecute = IEncouragerConfigFile.getConfigValue(player.getInventory().firstEmpty() == -1
+			? //is Player's inventory full?
+			"serverCommandToDeposit" : "serverCommandToGiveMoney")
+			+ player.getName() + " " + rewards;
+		
+		int taskID = Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+		    logger.finer("::run(parameter) - Start: ");
+		    try {
+			getServer().dispatchCommand(getServer().getConsoleSender(), commandToExecute);
+			logger.finer("::run(parameter) - Finish: ");
+		    } catch (Exception e) {
+			throw new RuntimeException("Impossible to complete the operation due to an unknown internal error.", e);
+		    }
+		}, 20);//1 sec=20ticks
+	    }
 
 	    logger.finer("::payPrice(player,rewards) - Finish: ");
 
@@ -281,16 +311,21 @@ public class RunToSpawn {
 	}
     }
 
-    public static synchronized void tryToPay(Player player, Number ammount) {
+    /**
+     * Manages logistics when calling {@link #payPrice(org.bukkit.entity.Player, java.lang.Long) }.
+     * @param player
+     * @param ammount 
+     */
+    public static synchronized void tryToPay(IEncouragerPlugin plugin, Player player, Number ammount) {
 	logger.fine("::tryToPay(player) - Start: ");
 	notNullValidation(player, "The parameter can't be null.");
 	try {
 	    try {
-		payPrice(player, ammount.longValue());
+		payPrice(plugin, player, ammount.longValue());
 	    } catch (IEncouragerException ex) {
 		Integer code = new Random().nextInt((9999 - 100) + 1) + 10;
-		logger.log(Level.SEVERE, "An exception has ocurred when paying $${0} player: {1}.Pay manmually with code: {2}. Will try to ignore and keep delivering payouts!",
-			new Object[]{ammount, player, code});
+		logger.log(Level.SEVERE, "An exception has ocurred when paying $${0} player: {1}.Pay manmually with code: {2}. Will try to ignore and keep delivering payouts!, Exception: {3} \n {4}",
+			new Object[]{ammount, player, code,ex,ex.getCauses()});
 		player.sendMessage("iEncourager couldn't pay you due to an exception please report it to an admin. To claim your manual reward provide this code: " + code);
 		player.sendMessage("iEncourager no pudo pagarte debido a un error, favor de reportarlo a un admin. Para reclamar tu premio entrega este codigo: " + code);
 	    }
@@ -375,7 +410,7 @@ public class RunToSpawn {
 	 */
 	public synchronized void launchAlertThreads(Long firstSleepMilli, Integer minRewards, Integer maxRewards, Long minDistance, Long maxDistance) {
 	    new OneMinAlert(firstSleepMilli, maxRewards).start();
-	    new FifteenSecAlert(firstSleepMilli, minRewards, maxRewards, minDistance, maxDistance).start();
+	    new FifteenSecAlert((IEncouragerPlugin) plugin, firstSleepMilli, minRewards, maxRewards, minDistance, maxDistance).start();
 	}
 
 	/**
@@ -433,18 +468,20 @@ public class RunToSpawn {
 
     private class FifteenSecAlert extends Thread {
 
+	IEncouragerPlugin plugin;
 	Long firstSleepMilli;
 	Integer minRewards;
 	Integer maxRewards;
 	Long minDistance;
 	Long maxDistance;
 
-	public FifteenSecAlert(Long firstSleepMilli, Integer minRewards, Integer maxRewards, Long minDistance, Long maxDistance) {
+	public FifteenSecAlert(IEncouragerPlugin plugin, Long firstSleepMilli, Integer minRewards, Integer maxRewards, Long minDistance, Long maxDistance) {
 	    this.firstSleepMilli = firstSleepMilli;
 	    this.minRewards = minRewards;
 	    this.maxRewards = maxRewards;
 	    this.minDistance = minDistance;
 	    this.maxDistance = maxDistance;
+	    this.plugin=plugin;
 	}
 
 	@Override
@@ -473,7 +510,7 @@ public class RunToSpawn {
 		    Bukkit.getServer().broadcastMessage("Ends in: " + i + " second" + (i > 1 ? "s." : "."));
 		    Thread.sleep(1000);
 		}
-		calculateAndShowEventResults(minRewards, maxRewards, minDistance, maxDistance);
+		calculateAndShowEventResults(plugin, minRewards, maxRewards, minDistance, maxDistance);
 
 	    } catch (InterruptedException ex) {
 		logger.log(Level.SEVERE, null, ex);
@@ -496,7 +533,7 @@ public class RunToSpawn {
 	    logger.info("::ForcedRunToSpawnThread.run(): Data read. Calling for alert to let players know and calculate the result");
 
 	    //sleeping for 15 +1 seconds
-	    new FifteenSecAlert(16000l, minRewards, maxRewards, minDistance, maxDistance).start();
+	    new FifteenSecAlert((IEncouragerPlugin) plugin, 16000l, minRewards, maxRewards, minDistance, maxDistance).start();
 	}
     }
 
