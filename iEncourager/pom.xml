@@ -4,8 +4,7 @@
 
     <artifactId>iEncourager</artifactId>
     <groupId>org.white_sdev.spigot_plugins</groupId>
-    <version>1.16.3-R0.1-SNAPSHOT-1.1.0</version>
-	
+    <version>1.16.3-R0.1-SNAPSHOT-1.2.0</version>	
     <properties>
 	<maven.compiler.source>1.8</maven.compiler.source>
 	<maven.compiler.target>1.8</maven.compiler.target>
