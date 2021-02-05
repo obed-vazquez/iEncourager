@@ -1,0 +1,17 @@
+org\white_sdev\spigot_plugins\iencourager\model\Sounds.class
+org\white_sdev\spigot_plugins\iencourager\IEncouragerPlugin.class
+org\white_sdev\spigot_plugins\iencourager\model\RunToSpawn$RunToSpawnThread.class
+org\white_sdev\spigot_plugins\iencourager\model\RunToSpawn$FifteenSecAlert.class
+org\white_sdev\spigot_plugins\iencourager\IEncouragerConfigFile.class
+org\white_sdev\spigot_plugins\iencourager\commands\StopCommand.class
+org\white_sdev\spigot_plugins\iencourager\exceptions\IEncouragerException.class
+org\white_sdev\spigot_plugins\iencourager\model\RunToSpawn$1.class
+org\white_sdev\spigot_plugins\iencourager\model\ExhaustionModifier.class
+org\white_sdev\spigot_plugins\iencourager\model\RunToSpawn.class
+org\white_sdev\spigot_plugins\iencourager\model\RunToSpawn$OneMinAlert.class
+org\white_sdev\spigot_plugins\iencourager\listeners\VelocityChangesListener.class
+org\white_sdev\spigot_plugins\iencourager\commands\StartCommand.class
+org\white_sdev\spigot_plugins\iencourager\model\RunToSpawn$ForcedRunToSpawnThread.class
+org\white_sdev\spigot_plugins\iencourager\util\Util.class
+org\white_sdev\spigot_plugins\iencourager\util\ConfigFile.class
+org\white_sdev\spigot_plugins\iencourager\commands\LaunchTestCommand.class
